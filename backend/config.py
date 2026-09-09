@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Optional
 
 from pydantic_settings import BaseSettings
 
@@ -9,15 +10,19 @@ _PROJECT_ROOT = Path(__file__).parent.parent
 class Settings(BaseSettings):
     uploads_path: str = str(_PROJECT_ROOT / "data" / "uploads")
     chroma_path: str = str(_PROJECT_ROOT / "data" / "chroma_db")
-    hf_model: str = "google/flan-t5-base"
+    hf_model: str = "google/flan-t5-large"
     embedding_model: str = "all-MiniLM-L6-v2"
-    chunk_size: int = 512
-    chunk_overlap: int = 64
-    top_k: int = 5
-    similarity_threshold: float = 1.5
-    answer_context_chunk_count: int = 4
-    answer_context_max_chars: int = 400
-    answer_min_new_tokens: int = 32
+    chunk_size: int = 200
+    chunk_overlap: int = 40
+    retrieval_candidate_pool: int = 20
+    similarity_threshold: float = 1.1
+    reranker_model: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
+    rerank_top_n: int = 5
+    rerank_min_score: Optional[float] = -3.0
+    answer_context_chunk_count: int = 5
+    answer_context_max_chars: int = 300
+    answer_context_total_max_chars: int = 1500
+    answer_min_new_tokens: int = 64
     answer_max_new_tokens: int = 300
     answer_num_beams: int = 1
 
