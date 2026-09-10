@@ -1,6 +1,15 @@
 from __future__ import annotations
 
+import re
+
 import chromadb
+from rank_bm25 import BM25Okapi
+
+_BM25_TOKEN_RE = re.compile(r"\w+")
+
+
+def _tokenize(text: str) -> list[str]:
+    return _BM25_TOKEN_RE.findall(text.lower())
 
 
 class Retriever:
@@ -10,6 +19,26 @@ class Retriever:
             name="documents",
             metadata={"hnsw:space": "cosine"},
         )
+        self._bm25_index: BM25Okapi | None = None
+        self._bm25_ids: list[str] = []
+        self._bm25_chunks: list[dict] = []
+        self._rebuild_bm25_index()
+
+    def _rebuild_bm25_index(self) -> None:
+        # BM25Okapi([]) raises ZeroDivisionError, so a fresh/empty install
+        # must skip index construction entirely rather than build on empty data.
+        if self.collection.count() == 0:
+            self._bm25_index = None
+            self._bm25_ids = []
+            self._bm25_chunks = []
+            return
+        result = self.collection.get(include=["documents", "metadatas"])
+        ids, docs, metas = result["ids"], result["documents"], result["metadatas"]
+        tokenized = [_tokenize(d) for d in docs]
+        new_index = BM25Okapi(tokenized)  # build fully before assigning
+        self._bm25_index = new_index
+        self._bm25_ids = ids
+        self._bm25_chunks = [{"text": d, "metadata": m} for d, m in zip(docs, metas)]
 
     def add_chunks(self, chunks: list[dict], embeddings: list[list[float]]) -> None:
         ids = [f"{c['metadata']['source']}::{c['metadata']['chunk_index']}" for c in chunks]
@@ -20,13 +49,17 @@ class Retriever:
             for c in chunks
         ]
         self.collection.upsert(ids=ids, embeddings=embeddings, documents=documents, metadatas=metadatas)
+        self._rebuild_bm25_index()
 
     def search(
         self,
         query_embedding: list[float],
+        query_text: str,
         n_results: int = 5,
         source_filter: str | None = None,
         distance_threshold: float = 1.5,
+        hybrid_search_enabled: bool = True,
+        rrf_k: int = 60,
     ) -> list[dict]:
         where = {"source": source_filter} if source_filter else None
         # Clamp n_results to collection size to avoid ChromaDB errors
@@ -43,15 +76,47 @@ class Retriever:
             kwargs["where"] = where
         results = self.collection.query(**kwargs)
 
-        chunks = []
-        for doc, meta, dist in zip(
+        vector_ranked_ids: list[str] = []
+        chunk_by_id: dict[str, dict] = {}
+        for cid, doc, meta, dist in zip(
+            results["ids"][0],
             results["documents"][0],
             results["metadatas"][0],
             results["distances"][0],
         ):
             if dist <= distance_threshold:
-                chunks.append({"text": doc, "metadata": meta, "distance": dist})
-        return chunks
+                vector_ranked_ids.append(cid)
+                chunk_by_id[cid] = {"text": doc, "metadata": meta, "distance": dist}
+
+        if not hybrid_search_enabled:
+            return [chunk_by_id[cid] for cid in vector_ranked_ids]
+
+        bm25_ranked_ids: list[str] = []
+        if self._bm25_index is not None:
+            tokens = _tokenize(query_text)
+            if tokens:
+                scores = self._bm25_index.get_scores(tokens)
+                ranked = sorted(range(len(scores)), key=lambda i: scores[i], reverse=True)
+                for i in ranked:
+                    if scores[i] <= 0:
+                        continue
+                    chunk = self._bm25_chunks[i]
+                    if source_filter and chunk["metadata"].get("source") != source_filter:
+                        continue
+                    cid = self._bm25_ids[i]
+                    bm25_ranked_ids.append(cid)
+                    chunk_by_id.setdefault(cid, {**chunk, "distance": None})
+                    if len(bm25_ranked_ids) >= n_results:
+                        break
+
+        rrf_scores: dict[str, float] = {}
+        for rank, cid in enumerate(vector_ranked_ids, start=1):
+            rrf_scores[cid] = rrf_scores.get(cid, 0.0) + 1.0 / (rrf_k + rank)
+        for rank, cid in enumerate(bm25_ranked_ids, start=1):
+            rrf_scores[cid] = rrf_scores.get(cid, 0.0) + 1.0 / (rrf_k + rank)
+
+        fused_ids = sorted(rrf_scores, key=lambda cid: rrf_scores[cid], reverse=True)[:n_results]
+        return [{**chunk_by_id[cid], "rrf_score": rrf_scores[cid]} for cid in fused_ids]
 
     def list_sources(self) -> list[dict]:
         result = self.collection.get(include=["metadatas"])
@@ -67,4 +132,5 @@ class Retriever:
         if not ids:
             raise ValueError(f"No chunks found for source: {filename}")
         self.collection.delete(ids=ids)
+        self._rebuild_bm25_index()
         return len(ids)

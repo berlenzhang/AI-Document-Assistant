@@ -18,9 +18,12 @@ async def query_document(
     query_vector = embedder.embed_one(body.question)
     candidates = retriever.search(
         query_vector,
+        body.question,
         n_results=settings.retrieval_candidate_pool,
         source_filter=body.filename,
         distance_threshold=settings.similarity_threshold,
+        hybrid_search_enabled=settings.hybrid_search_enabled,
+        rrf_k=settings.hybrid_rrf_k,
     )
     chunks = reranker.rerank(
         body.question,

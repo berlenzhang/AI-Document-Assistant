@@ -16,6 +16,8 @@ class Settings(BaseSettings):
     chunk_overlap: int = 40
     retrieval_candidate_pool: int = 20
     similarity_threshold: float = 1.1
+    hybrid_search_enabled: bool = True
+    hybrid_rrf_k: int = 60
     reranker_model: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
     rerank_top_n: int = 5
     rerank_min_score: Optional[float] = -3.0
