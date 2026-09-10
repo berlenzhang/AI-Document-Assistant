@@ -31,15 +31,6 @@ async def query_document(
         top_n=settings.rerank_top_n,
         min_score=settings.rerank_min_score,
     )
-    answer_text, citations_data = llm.answer(
-        body.question,
-        chunks,
-        context_chunk_count=settings.answer_context_chunk_count,
-        context_max_chars=settings.answer_context_max_chars,
-        context_total_max_chars=settings.answer_context_total_max_chars,
-        min_new_tokens=settings.answer_min_new_tokens,
-        max_new_tokens=settings.answer_max_new_tokens,
-        num_beams=settings.answer_num_beams,
-    )
+    answer_text, citations_data = llm.answer(body.question, chunks)
     citations = [Citation(**c) for c in citations_data]
     return QueryResponse(answer=answer_text, citations=citations)

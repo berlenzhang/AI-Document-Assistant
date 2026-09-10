@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Optional
+from typing import Literal, Optional
 
 from pydantic_settings import BaseSettings
 
@@ -18,6 +18,16 @@ class Settings(BaseSettings):
     similarity_threshold: float = 1.1
     hybrid_search_enabled: bool = True
     hybrid_rrf_k: int = 60
+    anthropic_api_key: Optional[str] = None
+    eval_judge_model: str = "claude-opus-4-8"
+    llm_provider: Literal["flan_t5", "claude"] = "flan_t5"
+    llm_claude_model: str = "claude-opus-4-8"
+    llm_claude_max_tokens: int = 1024
+    # Default False: interactive /query is latency-sensitive single-turn
+    # extractive QA, not the kind of "remotely complicated" task adaptive
+    # thinking is meant for. Configurable so the eval harness can A/B it
+    # without a code change.
+    llm_claude_thinking_enabled: bool = False
     reranker_model: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
     rerank_top_n: int = 5
     rerank_min_score: Optional[float] = -3.0

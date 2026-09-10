@@ -1,7 +1,7 @@
 from functools import lru_cache
 from services.embedder import Embedder
 from services.retriever import Retriever
-from services.llm import LLMService
+from services.llm import LLMService, build_llm_service
 from services.reranker import Reranker
 from config import settings
 
@@ -18,7 +18,7 @@ def get_retriever() -> Retriever:
 
 @lru_cache()
 def get_llm() -> LLMService:
-    return LLMService(model_name=settings.hf_model)
+    return build_llm_service(settings.llm_provider)
 
 
 @lru_cache()

@@ -1,0 +1,93 @@
+[
+  {
+    "id": "eiffel_height",
+    "question": "How tall is the Eiffel Tower and how long did it hold the record for tallest man-made structure?",
+    "source": "test_doc.txt",
+    "expected_chunk_contains": "330 metres",
+    "type": "positive"
+  },
+  {
+    "id": "eiffel_visitors",
+    "question": "How many people visit the Eiffel Tower each year?",
+    "source": "test_doc.txt",
+    "expected_chunk_contains": "7 million",
+    "type": "positive"
+  },
+  {
+    "id": "category_prediction",
+    "question": "What programming approach was used for category prediction and what features did it rely on?",
+    "source": "writeup.txt",
+    "expected_chunk_contains": "TF-IDF",
+    "type": "positive"
+  },
+  {
+    "id": "read_prediction",
+    "question": "What model was used for read prediction?",
+    "source": "writeup.txt",
+    "expected_chunk_contains": "popularity based model",
+    "type": "positive"
+  },
+  {
+    "id": "half_shell_helmets",
+    "question": "what are half shell helmets",
+    "source": "CMSP Student Handbook v9.32 resized.pdf",
+    "expected_chunk_contains": "Half-shell helmets provide the least protection",
+    "type": "positive"
+  },
+  {
+    "id": "roll_off_test",
+    "question": "what is the roll-off test",
+    "source": "CMSP Student Handbook v9.32 resized.pdf",
+    "expected_chunk_contains": "roll-off test",
+    "type": "positive"
+  },
+  {
+    "id": "hirham_model",
+    "question": "What does HIRHAM refer to?",
+    "source": "Beniston_Switzerland1644-2.pdf",
+    "expected_chunk_contains": "HIRHAM",
+    "type": "positive"
+  },
+  {
+    "id": "rcao_model",
+    "question": "What does the RCAO model refer to?",
+    "source": "Beniston_Switzerland1644-2.pdf",
+    "expected_chunk_contains": "RCAO",
+    "type": "positive"
+  },
+  {
+    "id": "yelp_liability",
+    "question": "What is the maximum liability Yelp has under the data agreement?",
+    "source": "Dataset_User_Agreement.pdf",
+    "expected_chunk_contains": "US$50.00",
+    "type": "positive"
+  },
+  {
+    "id": "yelp_term",
+    "question": "How long is the term of the Yelp data agreement?",
+    "source": "Dataset_User_Agreement.pdf",
+    "expected_chunk_contains": "twelve (12) months",
+    "type": "positive"
+  },
+  {
+    "id": "mongolia_capital",
+    "question": "What is the capital of Mongolia and what is its population?",
+    "source": null,
+    "expected_chunk_contains": null,
+    "type": "negative"
+  },
+  {
+    "id": "romeo_juliet",
+    "question": "Explain the plot of Romeo and Juliet",
+    "source": null,
+    "expected_chunk_contains": null,
+    "type": "negative"
+  },
+  {
+    "id": "chocolate_cake",
+    "question": "What is the best recipe for chocolate cake?",
+    "source": null,
+    "expected_chunk_contains": null,
+    "type": "negative"
+  }
+]
